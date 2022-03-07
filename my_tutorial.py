@@ -14,26 +14,42 @@ import random
 import time
 import numpy as np
 import cv2
+import warnings
+import matplotlib.pyplot as plt
+
+warnings.filterwarnings("ignore")
 
 IM_WIDTH = 640
 IM_HEIGHT = 480
-
+FPS = 10
+NUM_FRAMES = 300
 
 def process_img(image):
     i = np.array(image.raw_data)
     i2 = i.reshape((IM_HEIGHT, IM_WIDTH, 4))
     i3 = i2[:, :, :3]
-    cv2.imshow("", i3)
-    cv2.waitKey(1)
+    plt.imshow(i3)
+    plt.show()
+    #cv2.imshow("", i3)
+    #cv2.waitKey(5)
+    #print("In the function")
     return i3/255.0
 
 
 actor_list = []
 try:
+    frame_number = 0
     client = carla.Client('127.0.0.1', 2000)
     client.set_timeout(20.0)
 
     world = client.get_world()
+
+    # Control synchronous time
+    settings = world.get_settings()
+    settings.synchronous_mode = True
+    settings.fixed_delta_seconds = 1.0/FPS
+    settings.no_rendering_mode = False
+    world.apply_settings(settings)
 
     blueprint_library = world.get_blueprint_library()
 
@@ -52,8 +68,8 @@ try:
     # get the blueprint for this sensor
     blueprint = blueprint_library.find('sensor.camera.rgb')
     # change the dimensions of the image
-    blueprint.set_attribute('image_size_x', f'{IM_WIDTH}')
-    blueprint.set_attribute('image_size_y', f'{IM_HEIGHT}')
+    blueprint.set_attribute('image_size_x', str(IM_WIDTH))
+    blueprint.set_attribute('image_size_y', str(IM_HEIGHT))
     blueprint.set_attribute('fov', '110')
 
     # Adjust sensor relative to vehicle
@@ -68,8 +84,11 @@ try:
     # do something with this sensor
     sensor.listen(lambda data: process_img(data))
 
-    while(1):
-        pass
+    while (frame_number < NUM_FRAMES):
+        print(frame_number)
+        frame_number += 1
+        world.tick()
+
     time.sleep(10)
 
 finally:
@@ -77,3 +96,4 @@ finally:
     for actor in actor_list:
         actor.destroy()
     print('done.')
+
