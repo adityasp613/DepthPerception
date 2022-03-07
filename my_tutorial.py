@@ -17,24 +17,27 @@ import cv2
 import warnings
 import matplotlib.pyplot as plt
 
+# Import queue library
+import queue
+
 warnings.filterwarnings("ignore")
 
 IM_WIDTH = 640
 IM_HEIGHT = 480
-FPS = 10
+FPS = 40
 NUM_FRAMES = 300
 
 def process_img(image):
-    i = np.array(image.raw_data)
-    i2 = i.reshape((IM_HEIGHT, IM_WIDTH, 4))
-    i3 = i2[:, :, :3]
-    plt.imshow(i3)
-    plt.show()
-    #cv2.imshow("", i3)
-    #cv2.waitKey(5)
-    #print("In the function")
-    return i3/255.0
 
+    if(image is not None):
+        i = np.array(image.raw_data)
+        i2 = i.reshape((IM_HEIGHT, IM_WIDTH, 4))
+        i3 = i2[:, :, :3]
+        #plt.imshow(i3)
+        cv2.imshow("", i3)
+        cv2.waitKey(5)
+        #print("In the function")
+        return i3/255.0
 
 actor_list = []
 try:
@@ -81,13 +84,19 @@ try:
     # add sensor to list of actors
     actor_list.append(sensor)
 
-    # do something with this sensor
-    sensor.listen(lambda data: process_img(data))
+    # create queue to append sensor data
+    camera_queue = queue.Queue()
+    sensor.listen(camera_queue.put)
+    world.tick()
 
     while (frame_number < NUM_FRAMES):
         print(frame_number)
         frame_number += 1
+
         world.tick()
+        if(not camera_queue.empty()):
+            process_img(camera_queue.get())
+            
 
     time.sleep(10)
 
