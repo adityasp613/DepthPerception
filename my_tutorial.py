@@ -1,6 +1,10 @@
+import torch
+import torchvision
+from PIL import Image
 import glob
 import os
 import sys
+import time 
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
@@ -11,6 +15,7 @@ except IndexError:
 import carla
 
 import random
+# torchvision.models.detection.maskrcnn_resnet50_fpn
 import time
 import numpy as np
 import cv2
@@ -21,21 +26,40 @@ import matplotlib.pyplot as plt
 import queue
 
 warnings.filterwarnings("ignore")
-
+print("starting")
 IM_WIDTH = 640
 IM_HEIGHT = 480
 FPS = 40
 NUM_FRAMES = 300
 
+model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+model.eval()
+
 def process_img(image):
+    #model.eval()
 
     if(image is not None):
+        start = time.time()
         i = np.array(image.raw_data)
         i2 = i.reshape((IM_HEIGHT, IM_WIDTH, 4))
         i3 = i2[:, :, :3]
-        #plt.imshow(i3)
-        cv2.imshow("", i3)
-        cv2.waitKey(5)
+        dim = (300, 400)
+        #i3 = np.resize(i3, (400, 300, 3))
+        #resized = cv2.resize(i3, dim, interpolation = cv2.INTER_AREA)
+        resized = np.transpose(i3, (2, 0, 1))
+        rt = torch.from_numpy(resized)
+        #rt = rt.reshape((3, 300, 400))
+        #print(rt.size())
+        #cv2.imshow("", i3)
+        #cv2.waitKey(5)
+        rt = rt.type(torch.FloatTensor)
+        rt = rt/255.0
+        #cv2.imwrite("/home/ubuntu/Pictures/imdata.jpg", i3)
+        preds = model([rt])
+        #print("Forward called")
+        end = time.time()
+        print("time = ", end-start)
+       
         #print("In the function")
         return i3/255.0
 
