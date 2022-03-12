@@ -55,7 +55,7 @@ def write_depth(filename, depth, intrinsics=None):
     if filename.endswith('.npz'):
         np.savez_compressed(filename, depth=depth, intrinsics=intrinsics)
     # If we are saving as a .npy
-    if filename.endswith('.npy'):
+    elif filename.endswith('.npy'):
         np.save(filename, depth)
     # If we are saving as a .png
     elif filename.endswith('.png'):

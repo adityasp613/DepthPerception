@@ -9,7 +9,7 @@ from glob import glob
 from cv2 import imwrite
 
 import sys
-sys.path.append("/content/packnet-sfm")
+sys.path.append("/content/DepthPerception/Code/packnet-sfm/")
 
 from packnet_sfm.models.model_wrapper import ModelWrapper
 from packnet_sfm.datasets.augmentations import resize_image, to_tensor
