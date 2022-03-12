@@ -4,9 +4,9 @@ import torch
 import urllib
 import matplotlib.pyplot as plt
 
-#url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
-#urllib.request.urlretrieve(url, filename)
-filename = "/home/ubuntu/18744/DepthPerception/saved_copy/carla_images/image_224.jpg"
+url, filename = ("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
+urllib.request.urlretrieve(url, filename)
+#filename = "/home/ubuntu/18744/DepthPerception/saved_copy/carla_images/image_224.jpg"
 data_filename = "/home/ubuntu/18744/DepthPerception/saved_copy/calib.npy"
 K = np.load(data_filename)
 model_type = "DPT_Large"
@@ -43,6 +43,8 @@ print(depth.shape)
 rows, cols = depth.shape
 c, r = np.meshgrid(np.arange(cols), np.arange(rows))
 points = np.stack([c, r, depth])
+print("points shape")
+print(points.shape)
 points = points.reshape((3, -1))
 points = points.T
 f_u = K[0, 0]
@@ -66,18 +68,20 @@ def project_image_to_rect(uv_depth):
         return pts_3d_rect
 
 pseudo_lidar = project_image_to_rect(points)
-
+print("pseudo-lidar shape")
+print(np.shape(pseudo_lidar))
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
-xs = pseudo_lidar[:, 0] * 255
-ys = pseudo_lidar[:, 1] * 255
-zs = pseudo_lidar[:, 2] * 255
+xs = pseudo_lidar[:, 0]
+ys = pseudo_lidar[:, 1]
+zs = pseudo_lidar[:, 2]
 
 np.savez("3d_data", xs = xs, ys = ys, zs = zs)
-#ax.scatter(xs, ys, zs)
-# plt.subplot(211)
-# plt.imshow(img)
-# plt.subplot(212)
-# plt.imshow(output)
-# plt.show()
+ax.scatter3D(xs, ys, zs)
+plt.figure()
+plt.subplot(211)
+plt.imshow(img)
+plt.subplot(212)
+plt.imshow(depth)
+plt.show()
