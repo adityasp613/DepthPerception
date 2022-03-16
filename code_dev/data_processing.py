@@ -1,5 +1,4 @@
 import numpy as np 
-import scipy as sp
 from cv2 import cv2
 
 def process_image(image, filename, show_image = False):
