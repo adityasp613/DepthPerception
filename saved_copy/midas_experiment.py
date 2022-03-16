@@ -38,6 +38,7 @@ with torch.no_grad():
 
 
 depth = prediction.cpu().numpy()
+print(depth)
 
 print(depth.shape)
 rows, cols = depth.shape
