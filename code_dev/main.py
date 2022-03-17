@@ -3,7 +3,7 @@ import os
 from DepthModel import DepthModel
 from DataManager import DataManager
 from SimWorld import SimWorld
-import config
+import configuration as config
 
 #Create data directory
 data_manager = DataManager(config.ROOT_DIR)

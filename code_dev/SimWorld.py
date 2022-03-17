@@ -1,7 +1,7 @@
 import sys
 import os
 import queue
-import config
+import configuration as config
 import random
 import data_processing
 sys.path.append(config.CARLA_EGG_PATH)
