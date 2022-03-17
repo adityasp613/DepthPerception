@@ -7,18 +7,19 @@ import data_processing
 sys.path.append(config.CARLA_EGG_PATH)
 
 import carla 
-from set_synchronous_mode import CarlaSyncMode
+#from set_synchronous_mode import CarlaSyncMode
 
 class SimWorld:
 	
-	def __init__(self):
+	def __init__(self, scene, weather):
 		self.client = carla.Client('127.0.0.1', 2000)
 		self.client.set_timeout(20.0)
-		self.world = self.client.get_world()
+		self.world = self.client.load_world('Town01')
+		self.world.tick()
 		self.vehicles_list = []
-    
+		self.sensors_list = []
 		self.all_id = []
-		
+		self.batch = []
 		
 
 	def set_synchronous_mode(self, synch_mode = True, fps = 10, no_render = False):
@@ -29,6 +30,8 @@ class SimWorld:
 		self.world.apply_settings(settings)
 
 	def spawn_vehicles(self, num_vehicles):
+		tm = self.client.get_trafficmanager(8000)
+		tm.set_synchronous_mode(True)
 		vehicle_blueprints = self.world.get_blueprint_library().filter('vehicle.*')
 		spawn_points = self.world.get_map().get_spawn_points()
 		num_spawn_points = len(spawn_points)
@@ -45,48 +48,44 @@ class SimWorld:
 	    # --------------
 	    # Spawn vehicles
 	    # --------------
-		batch = []
 		for n, transform in enumerate(spawn_points):
-		    if n >= num_vehicles:
-		        break
-		    blueprint = random.choice(vehicle_blueprints)
-		    # Taking out bicycles and motorcycles, since the semantic/bb labeling for that is mixed with pedestrian
-		    if int(blueprint.get_attribute('number_of_wheels')) > 2:
-		        if blueprint.has_attribute('color'):
-		            color = random.choice(blueprint.get_attribute('color').recommended_values)
-		            blueprint.set_attribute('color', color)
-		        if blueprint.has_attribute('driver_id'):
-		            driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
-		            blueprint.set_attribute('driver_id', driver_id)
-		        blueprint.set_attribute('role_name', 'autopilot')
-		        batch.append(SpawnActor(blueprint, transform).then(SetAutopilot(FutureActor, True)))
+			if n >= num_vehicles:
+			    break
+			blueprint = random.choice(vehicle_blueprints)
+			# Taking out bicycles and motorcycles, since the semantic/bb labeling for that is mixed with pedestrian
+			if int(blueprint.get_attribute('number_of_wheels')) > 2:
+			    if blueprint.has_attribute('color'):
+			        color = random.choice(blueprint.get_attribute('color').recommended_values)
+			        blueprint.set_attribute('color', color)
+			    if blueprint.has_attribute('driver_id'):
+			        driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
+			        blueprint.set_attribute('driver_id', driver_id)
+			    blueprint.set_attribute('role_name', 'autopilot')
+			    self.batch.append(SpawnActor(blueprint, transform).then(SetAutopilot(FutureActor, True)))
 
-		for response in self.client.apply_batch_sync(batch):
+		for response in self.client.apply_batch_sync(self.batch):
 		    if response.error:
 		        print("Error in setting batch sync")
 		    else:
 		        self.vehicles_list.append(response.actor_id)
-
+		self.world.tick()
 		return self.vehicles_list
 
-	def configure_camera(self, vehicle, cam_imwidth, cam_imheight, cam_fov, x, z, queue):
+	def configure_camera(self, vehicle, cam_imwidth, cam_imheight, cam_fov, x_loc, z_loc, queue):
 		cam_bp = self.world.get_blueprint_library().find('sensor.camera.rgb')
-		cam_bp.set_attribute('image_size_x', f'{sensor_width}')
-		cam_bp.set_attribute('image_size_y', f'{sensor_height}')
-		cam_bp.set_attribute('fov', f'{fov}')
+		cam_bp.set_attribute('image_size_x', f'{cam_imwidth}')
+		cam_bp.set_attribute('image_size_y', f'{cam_imheight}')
+		cam_bp.set_attribute('fov', f'{cam_fov}')
 
-		spawn_point = carla.Transform(carla.Location(x=x_loc, y = y_loc, z = z_loc))
-		self.rgb_camera = self.world.spawn_actor(bp, spawn_point, attach_to=vehicle)
+		# spawn_point = carla.Transform(carla.Location(x=x_loc,z = z_loc))
+		# self.rgb_camera = self.world.spawn_actor(cam_bp, spawn_point, attach_to=vehicle)
+		transform = carla.Transform(carla.Location(x=0.8, z=1.7))
+		self.rgb_camera = self.world.spawn_actor(cam_bp, transform, attach_to = vehicle)
 		self.rgb_camera.blur_amount = 0.0
 		self.rgb_camera.motion_blur_intensity = 0
 		self.rgb_camera.motion_max_distortion = 0
 		self.rgb_camera.listen(queue.put)
-		# Camera calibration
-		calibration = np.identity(3)
-		calibration[0, 2] = sensor_width / 2.0
-		calibration[1, 2] = sensor_height / 2.0
-		calibration[0, 0] = calibration[1, 1] = sensor_width / (2.0 * np.tan(fov * np.pi / 360.0))
-		self.rgb_camera.calibration = calibration  # Parameter K of the camera
+		
 		self.sensors_list.append(self.rgb_camera)
 
 
@@ -96,17 +95,19 @@ class SimWorld:
 		current_frame = 0 
 		camera_queue = queue.Queue();
 
-		my_vehicle = random.choice([x for x in self.world.get_actors().filter("vehicle.*") if x.type_id not in
-		                             ['vehicle.audi.tt', 'vehicle.carlamotors.carlacola', 'vehicle.volkswagen.t2']])
-		self.configure_camera(self, my_vehicle, imwidth, imheight, imfov, 2.5, 0.7, camera_queue)
+		print(self.world.get_actors().filter("vehicle.*"))
+		my_vehicle = self.world.get_actors().filter("vehicle.*")[0]#random.choice([x for x in self.world.get_actors().filter("vehicle.*") if x.type_id not in
+                                    # ['vehicle.audi.tt', 'vehicle.carlamotors.carlacola', 'vehicle.volkswagen.t2']])
+		print("Printing my_vehicle")
+		print(my_vehicle)
+		self.configure_camera(my_vehicle, imwidth, imheight, imfov, 2.5, 0.7, camera_queue)
 
-		with CarlaSyncMode(self.world, self.rgb_camera, fps = frame_rate) as sync_mode:
-			while (current_frame< num_frames):
-				vehicle.set_autopilot(True)
-				print(current_frame)
-				current_frame += 1
+		
+		while (current_frame< num_frames):
+			print(current_frame)
+			current_frame += 1
 
-				world.tick()
-				if(not camera_queue.empty()):
-					self.client.apply_batch([SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
-					data_processing.process_img(camera_queue.get())
+			self.world.tick()
+			if(not camera_queue.empty()):
+				self.client.apply_batch([carla.command.SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
+				data_processing.process_image(camera_queue.get(), 'dummy')

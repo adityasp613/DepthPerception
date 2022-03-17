@@ -3,8 +3,8 @@ CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-l
 
 # Simulation configuration
 FPS = 40
-NUM_FRAMES = 300
-NUM_VEHICLES = 100
+NUM_FRAMES = 3000
+NUM_VEHICLES = 10
 
 # Image dimensions
 IMWIDTH = 640
