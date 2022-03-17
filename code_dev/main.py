@@ -4,7 +4,7 @@ from SimWorld import SimWorld
 import config
 
 # Create a world object
-carla_world = SimWorld()
+carla_world = SimWorld(config.WORLD_MAP, config.SCENE_WEATHER)
 
 print("Starting data capture")
 carla_world.set_synchronous_mode(synch_mode = True, fps = config.FPS, no_render = False)
