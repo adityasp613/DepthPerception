@@ -47,3 +47,5 @@ IMFOV = 110
 #Data save path
 ROOT_DIR = '/home/ubuntu/18744/DepthPerception/carla_image_datasets'
 
+# Choice of depth model
+DEPTH_MODEL = 'midas'
