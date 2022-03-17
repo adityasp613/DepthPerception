@@ -45,8 +45,6 @@ class SimWorld:
 		print('Ego vehicle spawned......')
 		return vehicle
 
-
-
 	def spawn_vehicles(self, num_vehicles):
 		tm = self.client.get_trafficmanager(8000)
 		tm.set_synchronous_mode(True)
@@ -109,7 +107,7 @@ class SimWorld:
 
 		return self.rgb_camera
 
-	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames):
+	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, data_file_path):
 		current_frame = 0 
 		camera_queue = queue.Queue();
 
@@ -128,4 +126,4 @@ class SimWorld:
 			if(not camera_queue.empty()):
 				self.client.apply_batch([carla.command.SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
 				self.ego_vehicle.set_autopilot(True)
-				data_processing.process_image(camera_queue.get(), 'dummy')
+				data_processing.process_image(camera_queue.get(), data_file_path, current_frame)

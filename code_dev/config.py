@@ -36,11 +36,14 @@ CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-l
 
 # Simulation configuration
 FPS = 40
-NUM_FRAMES = 3000
+NUM_FRAMES = 300
 NUM_VEHICLES = 10
 
 # Image dimensions
 IMWIDTH = 640
 IMHEIGHT = 480
 IMFOV = 110
+
+#Data save path
+ROOT_DIR = '/home/ubuntu/18744/DepthPerception/carla_image_datasets'
 
