@@ -20,4 +20,4 @@ carla_world.set_synchronous_mode(synch_mode = True, fps = config.FPS, no_render 
 vehicles = carla_world.spawn_vehicles(config.NUM_VEHICLES)
 print(len(vehicles))
 carla_world.acquire_data(config.IMWIDTH, config.IMHEIGHT, config.IMFOV, config.FPS, 
-						config.NUM_FRAMES, depth_generator, capture_path)
+						config.NUM_FRAMES, depth_generator, capture_path, config.SHOW_IMAGE)

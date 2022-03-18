@@ -18,6 +18,7 @@ from packnet_sfm.utils.load import set_debug
 from packnet_sfm.utils.depth import write_depth, inv2depth, viz_inv_depth
 from packnet_sfm.utils.logging import pcolor
 
+computation_time_list = []
 
 def project_disp_to_points(calib, disp, max_high):
     disp[disp < 0] = 0
@@ -139,7 +140,12 @@ def process_image(image, folder, frame_id, depth_model, calibration, show_image 
     i = np.array(image.raw_data)
     i2 = i.reshape((config.IMHEIGHT, config.IMWIDTH, 4))
     i3 = i2[:, :, :3]
+    start_time = time.time()
     depth_map, depth_viz = depth_model.generate_depth_map(i3)
+    end_time = time.time()
+    computation_time_list.append(end_time - start_time)
+    average_inference_time = np.mean(computation_time_list)
+    print("Running average inference time = ", average_inference_time)
     disp_map = (depth_map).astype(np.float32)/256
     point_cloud = generate_point_cloud(disp_map, calibration)
     #print(point_cloud)

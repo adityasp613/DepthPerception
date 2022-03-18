@@ -17,6 +17,9 @@ class SimWorld:
 		self.client.set_timeout(20.0)
 		self.world = self.client.load_world(scene)
 		self.world.set_weather(weather)
+		# settings = self.world.get_settings()
+		# settings.no_rendering_mode = True
+		# self.world.apply_settings(settings)
 		self.ego_vehicle = self.spawn_ego_vehicle()
 		self.world.tick()
 		self.vehicles_list = []
@@ -114,7 +117,7 @@ class SimWorld:
 
 		return self.rgb_camera
 
-	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, data_file_path):
+	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, data_file_path, show_image):
 		current_frame = 0 
 		camera_queue = queue.Queue();
 
@@ -133,4 +136,4 @@ class SimWorld:
 			if(not camera_queue.empty()):
 				self.client.apply_batch([carla.command.SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
 				self.ego_vehicle.set_autopilot(True)
-				data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration)
+				data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
