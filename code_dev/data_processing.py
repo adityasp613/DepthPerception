@@ -109,25 +109,22 @@ def infer_and_save_depth(input_file, output_file, model_wrapper, image_shape, ha
         imwrite(output_file, image[:, :, ::-1])
         return image[:, :, ::-1]
 
+def generate_point_cloud(self, depth)
 def process_image(image, folder, frame_id, depth_model, show_image = True):
     i = np.array(image.raw_data)
     i2 = i.reshape((config.IMHEIGHT, config.IMWIDTH, 4))
     i3 = i2[:, :, :3]
     depth_map = depth_model.generate_depth_map(i3)
-    depth_map= ((depth_map/255) * 255).astype('uint8')
-    # depth_map = -depth_map + 255
-    
-    depth_map_img = cv2.cvtColor(depth_map, cv2.COLOR_RGB2BGR)
-    # rgb = cv2.cvtColor(i3, cv2.COLOR_BGR2RGB)#np.transpose(i3, (1, 2, 0))
-    # viz_pred_inv_depth = viz_inv_depth(depth_map) * 255
-    # image_viz = np.concatenate([rgb, viz_pred_inv_depth], 0)
-    # depth_map_img = np.dstack((depth_map, depth_map, depth_map))
-    # depth_map_img = depth_map
-    # depth_map_img = ((depth_map_img/255) * 255).astype('uint8')
-    # print(np.shape(depth_map_img))
-    depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
-    #depth_map_img_gray = cv2.cvtColor(depth_map_img, cv2.COLOR_BGR2RGB)
-    # concat_image = np.concatenate((i3_gray, depth_map_img_gray), axis=1)
+    if(config.DEPTH_MODEL == 'packnet'):
+        depth_map= ((depth_map/255) * 255).astype('uint8')
+        depth_map_img = cv2.cvtColor(depth_map, cv2.COLOR_RGB2BGR)
+        depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
+    elif(config.DEPTH_MODEL == 'midas'):
+        depth_map_img = np.dstack((depth_map, depth_map, depth_map))
+        depth_map_img = ((depth_map_img/255) * 255).astype('uint8')
+        depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_HSV)
+    else:
+        pass
     if(show_image == True):
       
         cv2.imshow("Original image", i3)

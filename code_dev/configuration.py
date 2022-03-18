@@ -26,10 +26,11 @@ Built-in weather primitives and choices
 21: HardRainNight;
 
 '''
+print(carla.WeatherParameters)
 SCENE_WEATHER = carla.WeatherParameters.ClearNoon
 
 # Town for map load -> town0/7
-WORLD_MAP = 'town02'
+WORLD_MAP = 'town03'
 
 # Path to the CARLA egg file
 CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-linux-x86_64.egg"

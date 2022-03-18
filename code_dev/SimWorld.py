@@ -95,7 +95,7 @@ class SimWorld:
 
 		# spawn_point = carla.Transform(carla.Location(x=x_loc,z = z_loc))
 		# self.rgb_camera = self.world.spawn_actor(cam_bp, spawn_point, attach_to=vehicle)
-		transform = carla.Transform(carla.Location(x=0.8, z=1.7))
+		transform = carla.Transform(carla.Location(x=x_loc, z=z_loc))
 		self.rgb_camera = self.world.spawn_actor(cam_bp, transform, attach_to = vehicle)
 		self.rgb_camera.blur_amount = 0.0
 		self.rgb_camera.motion_blur_intensity = 0
@@ -115,7 +115,7 @@ class SimWorld:
 		#my_vehicle = self.world.get_actors().filter("vehicle.*")[0]#random.choice([x for x in self.world.get_actors().filter("vehicle.*") if x.type_id not in
                                     # ['vehicle.audi.tt', 'vehicle.carlamotors.carlacola', 'vehicle.volkswagen.t2']])
 		
-		self.configure_camera(self.ego_vehicle, imwidth, imheight, imfov, 2.5, 0.7, camera_queue)
+		self.configure_camera(self.ego_vehicle, imwidth, imheight, imfov, 2.5, 1.7, camera_queue)
 
 		
 		while (current_frame< num_frames):
