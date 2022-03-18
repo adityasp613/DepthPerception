@@ -109,15 +109,43 @@ def infer_and_save_depth(input_file, output_file, model_wrapper, image_shape, ha
         imwrite(output_file, image[:, :, ::-1])
         return image[:, :, ::-1]
 
-def generate_point_cloud(self, depth)
-def process_image(image, folder, frame_id, depth_model, show_image = True):
+def project_image_to_rect(uv_depth, calibration):
+    ''' Input: nx3 first two channels are uv, 3rd channel
+               is depth in rect camera coord.
+        Output: nx3 points in rect camera coord.
+    '''
+    n = uv_depth.shape[0]
+    x = ((uv_depth[:, 0] - calibration[0, 2]) * uv_depth[:, 2]) / calibration[0, 0] + calibration[0, 3]
+    y = ((uv_depth[:, 1] - calibration[1, 2]) * uv_depth[:, 2]) / calibration[1, 1] + calibration[1, 3]
+    pts_3d_rect = np.zeros((n, 3))
+    pts_3d_rect[:, 0] = x
+    pts_3d_rect[:, 1] = y
+    pts_3d_rect[:, 2] = uv_depth[:, 2]
+    return pts_3d_rect
+
+def generate_point_cloud(depth, camera_matrix):
+    # print(np.shape(depth))
+    rows, cols = depth.shape
+    c, r = np.meshgrid(np.arange(cols), np.arange(rows))
+    points = np.stack([c, r, depth])
+    points = points.reshape((3, -1))
+    points = points.T
+    pseudo_cloud_rect = project_image_to_rect(points, camera_matrix)
+    return pseudo_cloud_rect
+
+def process_image(image, folder, frame_id, depth_model, calibration, show_image = True):
+    # print("Calibration matrix")
+    # print(calibration)
     i = np.array(image.raw_data)
     i2 = i.reshape((config.IMHEIGHT, config.IMWIDTH, 4))
     i3 = i2[:, :, :3]
-    depth_map = depth_model.generate_depth_map(i3)
+    depth_map, depth_viz = depth_model.generate_depth_map(i3)
+    disp_map = (depth_map).astype(np.float32)/256
+    point_cloud = generate_point_cloud(disp_map, calibration)
+    #print(point_cloud)
     if(config.DEPTH_MODEL == 'packnet'):
-        depth_map= ((depth_map/255) * 255).astype('uint8')
-        depth_map_img = cv2.cvtColor(depth_map, cv2.COLOR_RGB2BGR)
+        depth_viz= ((depth_viz/255) * 255).astype('uint8')
+        depth_map_img = cv2.cvtColor(depth_viz, cv2.COLOR_RGB2BGR)
         depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
     elif(config.DEPTH_MODEL == 'midas'):
         depth_map_img = np.dstack((depth_map, depth_map, depth_map))
@@ -131,9 +159,14 @@ def process_image(image, folder, frame_id, depth_model, show_image = True):
         cv2.imshow("Depth map", depth_map_img_gray)
         cv2.waitKey(5)
     if(folder is not None):
-
+        depth_file = 'depth_map_{}.jpg'.format(str(frame_id))
+        lidar_file = 'pseudo_lidar_{}'.format(str(frame_id))
         file_name = 'image_{}.jpg'.format(str(frame_id))
         file = os.path.join(folder, file_name)
+        lidar_path = os.path.join(folder, lidar_file)
+        depth_path = os.path.join(folder, depth_file)
+        np.save(lidar_path, point_cloud)
         cv2.imwrite(file, i3)
+        cv2.imwrite(depth_path, depth_map_img_gray)
     return i3/255.0
 

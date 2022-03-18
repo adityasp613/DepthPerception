@@ -30,25 +30,25 @@ print(carla.WeatherParameters)
 SCENE_WEATHER = carla.WeatherParameters.ClearNoon
 
 # Town for map load -> town0/7
-WORLD_MAP = 'town03'
+WORLD_MAP = 'town02'
 
 # Path to the CARLA egg file
 CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-linux-x86_64.egg"
 
 # Simulation configuration
 FPS = 40
-NUM_FRAMES = 300
-NUM_VEHICLES = 10
+NUM_FRAMES = 1000
+NUM_VEHICLES = 100
 
 # Image dimensions
 IMWIDTH = 640
 IMHEIGHT = 480
-IMFOV = 110
+IMFOV = 90
 
 #Data save path
 ROOT_DIR = '/home/ubuntu/18744/DepthPerception/carla_image_datasets'
 
 # Choice of depth model
-DEPTH_MODEL = 'packnet'
+DEPTH_MODEL = 'midas'
 
 PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/DepthPerception/code_dev/PackNet01_MR_selfsup_D.ckpt'

@@ -1,6 +1,7 @@
 import sys
 import os
 import queue
+import numpy as np
 import configuration as config
 import random
 import data_processing
@@ -100,6 +101,12 @@ class SimWorld:
 		self.rgb_camera.blur_amount = 0.0
 		self.rgb_camera.motion_blur_intensity = 0
 		self.rgb_camera.motion_max_distortion = 0
+		calibration = np.zeros((3,4))
+		calibration[0, 2] = cam_imwidth / 2.0
+		calibration[1, 2] = cam_imheight / 2.0
+		calibration[0, 0] = calibration[1, 1] = cam_imwidth / (2.0 * np.tan(cam_fov * np.pi / 360.0))
+		calibration[2, 3] = 1.0
+		self.rgb_camera.calibration = calibration
 		self.rgb_camera.listen(queue.put)
 		
 		self.sensors_list.append(self.rgb_camera)
@@ -115,7 +122,7 @@ class SimWorld:
 		#my_vehicle = self.world.get_actors().filter("vehicle.*")[0]#random.choice([x for x in self.world.get_actors().filter("vehicle.*") if x.type_id not in
                                     # ['vehicle.audi.tt', 'vehicle.carlamotors.carlacola', 'vehicle.volkswagen.t2']])
 		
-		self.configure_camera(self.ego_vehicle, imwidth, imheight, imfov, 2.5, 1.7, camera_queue)
+		self.configure_camera(self.ego_vehicle, imwidth, imheight, imfov, 2.5, 2.7, camera_queue)
 
 		
 		while (current_frame< num_frames):
@@ -126,4 +133,4 @@ class SimWorld:
 			if(not camera_queue.empty()):
 				self.client.apply_batch([carla.command.SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
 				self.ego_vehicle.set_autopilot(True)
-				data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model)
+				data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration)

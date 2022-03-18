@@ -68,7 +68,7 @@ class DepthModel:
 				        align_corners=False,
 				    ).squeeze()	
 			depth = prediction.cpu().numpy()
-			return depth
+			return depth, None
 		elif(self.model_name == 'packnet'):
 			return self.infer_and_save_depth(img, None, self.model, (config.IMHEIGHT, config.IMWIDTH), False, None)
 		else:
@@ -107,16 +107,18 @@ class DepthModel:
 
 		# Depth inference (returns predicted inverse depth)
 		pred_inv_depth = model_wrapper.depth(image)['inv_depths'][0]
-
+		depth_npy = inv2depth(pred_inv_depth)
+		# print(type(depth_npy))
 		if save == 'npz' or save == 'png' or save == 'npy':
+			pass
 		    # Get depth from predicted depth map and save to different formats
-		    filename = '{}.{}'.format(os.path.splitext(output_file)[0], save)
-		    print('Saving {} to {}'.format(
-		        pcolor(input_file, 'cyan', attrs=['bold']),
-		        pcolor(filename, 'magenta', attrs=['bold'])))
-		    depth_npy = inv2depth(pred_inv_depth)
-		    write_depth(filename, depth=inv2depth(pred_inv_depth))
-		    return depth_npy
+		    # filename = '{}.{}'.format(os.path.splitext(output_file)[0], save)
+		    # print('Saving {} to {}'.format(
+		    #     pcolor(input_file, 'cyan', attrs=['bold']),
+		    #     pcolor(filename, 'magenta', attrs=['bold'])))
+		    # depth_npy = inv2depth(pred_inv_depth)
+		    #write_depth(filename, depth=inv2depth(pred_inv_depth))
+		    #return depth_npy
 		else:
 		    # Prepare RGB image
 		    rgb = image[0].permute(1, 2, 0).detach().cpu().numpy() * 255
@@ -130,5 +132,6 @@ class DepthModel:
 		    #     pcolor(output_file, 'magenta', attrs=['bold'])))
 		    # imwrite(output_file, image[:, :, ::-1])
 		    #return image[:, :, ::-1]
-		    return viz_pred_inv_depth
+		    depth_npy = depth_npy.detach().squeeze().cpu().numpy()
+		    return depth_npy, viz_pred_inv_depth
 
