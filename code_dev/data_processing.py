@@ -134,7 +134,7 @@ def generate_point_cloud(depth, camera_matrix):
     pseudo_cloud_rect = project_image_to_rect(points, camera_matrix)
     return pseudo_cloud_rect
 
-def process_image(image, folder, frame_id, depth_model, calibration, show_image = True):
+def process_image(image, folder, frame_id, depth_model, calibration, show_image = False):
     # print("Calibration matrix")
     # print(calibration)
     i = np.array(image.raw_data)
@@ -160,7 +160,7 @@ def process_image(image, folder, frame_id, depth_model, calibration, show_image 
     else:
         pass
     if(show_image == True):
-      
+        #pass
         cv2.imshow("Original image", i3)
         cv2.imshow("Depth map", depth_map_img_gray)
         cv2.waitKey(5)
@@ -176,3 +176,13 @@ def process_image(image, folder, frame_id, depth_model, calibration, show_image 
         cv2.imwrite(depth_path, depth_map_img_gray)
     return i3/255.0
 
+def process_depth(image, folder, frame_id, depth_model, calibration, show_image = True):
+    data = np.array(image.raw_data)
+    data = data.reshape((config.IMHEIGHT, config.IMWIDTH, 4))
+    data = data.astype(np.float32)
+    # Apply (R + G * 256 + B * 256 * 256) / (256 * 256 * 256 - 1).
+    normalized_depth = np.dot(data[:, :, :3], [65536.0, 256.0, 1.0])
+    normalized_depth /= 16777215.0  # (256.0 * 256.0 * 256.0 - 1.0)
+    depth_meters = normalized_depth * 1000
+    print("Shape of depth map is: ", np.shape(depth_meters))
+    return depth_meters

@@ -2,8 +2,8 @@ import os
 import numpy as np
 from mayavi import mlab
 
-data_path = '/home/ubuntu/18744/DepthPerception/carla_image_datasets/capture_2022_03_18-04_44_12_PM'
-file_name = 'pseudo_lidar_59.npy'
+data_path = '/home/ubuntu/18744/DepthPerception/carla_image_datasets/capture_2022_03_18-09_31_47_PM'
+file_name = 'pseudo_lidar_33.npy'
 
 file_path = os.path.join(data_path, file_name)
 

@@ -117,15 +117,30 @@ class SimWorld:
 
 		return self.rgb_camera
 
+	def configure_depth_sensor(self, vehicle, cam_imwidth, cam_imheight, cam_fov, x_loc, z_loc, queue):
+		depth_bp = self.world.get_blueprint_library().find('sensor.camera.depth')
+		depth_bp.set_attribute('image_size_x', f'{cam_imwidth}')
+		depth_bp.set_attribute('image_size_y', f'{cam_imheight}')
+		depth_bp.set_attribute('fov', f'{cam_fov}')
+
+		spawn_point = carla.Transform(carla.Location(x=x_loc, z=z_loc))
+		self.depth_camera = self.world.spawn_actor(depth_bp, spawn_point, attach_to=vehicle)
+		self.depth_camera.listen(queue.put)
+		self.sensors_list.append(self.depth_camera)
+
+		return self.depth_camera
+
 	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, data_file_path, show_image):
 		current_frame = 0 
 		camera_queue = queue.Queue();
+		depth_queue = queue.Queue();
 
 		print(self.world.get_actors().filter("vehicle.*"))
 		#my_vehicle = self.world.get_actors().filter("vehicle.*")[0]#random.choice([x for x in self.world.get_actors().filter("vehicle.*") if x.type_id not in
                                     # ['vehicle.audi.tt', 'vehicle.carlamotors.carlacola', 'vehicle.volkswagen.t2']])
 		
 		self.configure_camera(self.ego_vehicle, imwidth, imheight, imfov, 2.5, 2.7, camera_queue)
+		self.configure_depth_sensor(self.ego_vehicle, imwidth, imheight, imfov, 2.5, 2.7, depth_queue)
 
 		
 		while (current_frame< num_frames):
@@ -137,3 +152,4 @@ class SimWorld:
 				self.client.apply_batch([carla.command.SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
 				self.ego_vehicle.set_autopilot(True)
 				data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
+				data_processing.process_depth(depth_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
