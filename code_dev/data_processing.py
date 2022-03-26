@@ -160,10 +160,10 @@ def process_image(image, folder, frame_id, depth_model, calibration, show_image 
     else:
         pass
     if(show_image == True):
-        #pass
-        cv2.imshow("Original image", i3)
-        cv2.imshow("Depth map", depth_map_img_gray)
-        cv2.waitKey(5)
+        pass
+        # cv2.imshow("Original image", i3)
+        # cv2.imshow("Depth map", depth_map_img_gray)
+        # cv2.waitKey(5)
     if(folder is not None):
         depth_file = 'depth_map_{}.jpg'.format(str(frame_id))
         lidar_file = 'pseudo_lidar_{}'.format(str(frame_id))
@@ -174,15 +174,36 @@ def process_image(image, folder, frame_id, depth_model, calibration, show_image 
         np.save(lidar_path, point_cloud)
         cv2.imwrite(file, i3)
         cv2.imwrite(depth_path, depth_map_img_gray)
-    return i3/255.0
+    return depth_map
 
 def process_depth(image, folder, frame_id, depth_model, calibration, show_image = True):
     data = np.array(image.raw_data)
     data = data.reshape((config.IMHEIGHT, config.IMWIDTH, 4))
     data = data.astype(np.float32)
+    #print("Raw depth data = ", data)
     # Apply (R + G * 256 + B * 256 * 256) / (256 * 256 * 256 - 1).
     normalized_depth = np.dot(data[:, :, :3], [65536.0, 256.0, 1.0])
     normalized_depth /= 16777215.0  # (256.0 * 256.0 * 256.0 - 1.0)
-    depth_meters = normalized_depth * 1000
-    print("Shape of depth map is: ", np.shape(depth_meters))
-    return depth_meters
+    normalized_depth = -1*normalized_depth + 1.0
+    
+    depth_img = np.dstack((normalized_depth, normalized_depth, normalized_depth))
+    
+    depth_img = (normalized_depth* 255).astype('uint8')
+    print("depth image = ", depth_img)
+    depth_img = cv2.cvtColor(depth_img, cv2.COLOR_BGR2RGB)
+    depth_map_img_gray = cv2.applyColorMap(depth_img, cv2.COLORMAP_HSV)
+    
+    #depth_meters = normalized_depth * 1000
+    cv2.imshow('ground truth', depth_map_img_gray)
+    cv2.waitKey(5)
+    #print("Shape of depth map is: ", np.shape(depth_meters))
+    return normalized_depth
+
+def MSE(img1, img2):
+    print("First depth = ", img1)
+    print("Secod depth = ", img2)
+    squared_diff = (img1 -img2) ** 2
+    summed = np.sum(squared_diff)
+    num_pix = img1.shape[0] * img1.shape[1] #img1 and 2 should have same shape
+    err = summed / num_pix
+    return np.sqrt(err)

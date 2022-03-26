@@ -1,4 +1,5 @@
 import sys
+import cv2
 import os
 import queue
 import numpy as np
@@ -151,5 +152,7 @@ class SimWorld:
 			if(not camera_queue.empty()):
 				self.client.apply_batch([carla.command.SetAutopilot(x, True) for x in [v for v in self.world.get_actors().filter("vehicle.*")]])
 				self.ego_vehicle.set_autopilot(True)
-				data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
-				data_processing.process_depth(depth_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
+				a1 = data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
+				b1 = data_processing.process_depth(depth_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
+				print("Loss = ", data_processing.MSE(a1, b1))
+
