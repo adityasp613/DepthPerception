@@ -216,6 +216,8 @@ def parse_train_file(file):
     elif file.endswith('ckpt'):
         checkpoint = torch.load(file, map_location='cpu')
         config = checkpoint.pop('config')
+        cfg_default = 'configs/default_config'
+        config = parse_train_config(cfg_default, '/content/DepthPerception/Code/packnet-sfm/configs/train_omnicam.yaml')
         checkpoint['file'] = file
         return config, checkpoint
     # We have a problem

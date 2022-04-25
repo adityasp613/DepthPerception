@@ -60,11 +60,23 @@ class HorovodTrainer(BaseTrainer):
         # Epoch loop
         for epoch in range(module.current_epoch, self.max_epochs):
             # Train
-            self.train(train_dataloader, module, optimizer)
+            train_output= self.train(train_dataloader, module, optimizer)
             # Validation
-            validation_output = self.validate(val_dataloaders, module)
+            # Aditya removed this
+            # '''
+            # validation_output = self.validate(val_dataloaders, module)
             # Check and save model
-            self.check_and_save(module, validation_output)
+            # self.check_and_save(module, train_output)
+            # '''
+			model_name = 'epoch_' + str(epoch) + '.ckpt'
+            filepath = os.path.join('/content/drive/MyDrive/autonomous_driving/packnet_models',model_name)
+            torch.save({
+            'config': module.config,
+            'epoch': module.current_epoch,
+            'state_dict': module.state_dict(),
+            'optimizer': module.optimizer.state_dict(),
+            'scheduler': module.scheduler.state_dict(),
+        },filepath)
             # Update current epoch
             module.current_epoch += 1
             # Take a scheduler step

@@ -2,6 +2,9 @@
 
 import argparse
 import torch
+import sys
+sys.path.append("/content/DepthPerception/Code/packnet-sfm/")
+
 
 from packnet_sfm.models.model_wrapper import ModelWrapper
 from packnet_sfm.trainers.horovod_trainer import HorovodTrainer

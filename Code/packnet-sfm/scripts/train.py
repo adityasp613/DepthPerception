@@ -1,6 +1,8 @@
 # Copyright 2020 Toyota Research Institute.  All rights reserved.
 
 import argparse
+import sys
+sys.path.append("/content/DepthPerception/Code/packnet-sfm/")
 
 from packnet_sfm.models.model_wrapper import ModelWrapper
 from packnet_sfm.models.model_checkpoint import ModelCheckpoint

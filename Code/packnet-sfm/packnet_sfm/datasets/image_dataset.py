@@ -2,6 +2,7 @@
 import re
 from collections import defaultdict
 import os
+import cv2
 
 from torch.utils.data import Dataset
 import numpy as np
@@ -95,11 +96,22 @@ class ImageDataset(Dataset):
         session, filename = self.files[idx]
         image = self._read_rgb_file(session, filename)
 
+        dig = filename.split('_')
+        fname_depth = dig[0] + '_2' + dig[1]
+
+        img_depth = cv2.imread(os.path.join('/content/Town01/generated/images_depth', fname_depth))
+        img_depth = np.asarray(img_depth)
+        normalized_depth = np.dot(img_depth[:, :, :3], [65536.0, 256.0, 1.0])
+        normalized_depth /= 16777215.0
+
+        # depth = self._read_rgb_file('/content/Town01/generated/images_depth/0000_20.png')
+
         sample = {
             'idx': idx,
             'filename': '%s_%s' % (session, os.path.splitext(filename)[0]),
             #
             'rgb': image,
+            'depth':normalized_depth,
             'intrinsics': dummy_calibration(image)
         }
 

@@ -1,7 +1,7 @@
 arch:
     max_epochs: 50
 model:
-    name: 'GenericSelfSupModel'
+    name: 'SelfSupModel'
     optimizer:
         name: 'Adam'
         depth:
@@ -13,11 +13,11 @@ model:
         step_size: 30
         gamma: 0.5
     depth_net:
-        name: 'RaySurfaceResNet'
-        version: '18pt'
+        name: 'PackNet01'
+        version: '1A'
     pose_net:
-        name: 'PoseResNet'
-        version: '18pt'
+        name: 'PoseNet'
+        version: ''
     params:
         crop: 'garg'
         min_depth: 0.0
@@ -28,17 +28,17 @@ datasets:
     train:
         batch_size: 1
         dataset: ['Image']
-        path: ['/data/datasets/omnicam']
-        split: ['{:09}']
+        path: ['/content/Town01_formatted/image_2']
+        split: ['{:04}']
         depth_type: ['']
         repeat: [1]
     validation:
         dataset: ['KITTI']
-        path: ['/data/datasets/KITTI_tiny']
-        split: ['kitti_tiny.txt']
+        path: ['/content/Town01_formatted/image_2']
+        split: ['/content/Town01_formatted/train_split.txt']
         depth_type: ['velodyne']
     test:
         dataset: ['KITTI']
-        path: ['/data/datasets/KITTI_tiny']
-        split: ['kitti_tiny.txt']
+        path: ['/content/Town01_formatted/image_2']
+        split: ['/content/Town01_formatted/train_split.txt']
         depth_type: ['velodyne']

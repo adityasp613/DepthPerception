@@ -1,6 +1,7 @@
 # Copyright 2020 Toyota Research Institute.  All rights reserved.
 
 import cv2
+import numpy as np
 import torch
 import torch.nn.functional as funct
 from functools import lru_cache
@@ -23,7 +24,11 @@ def load_image(path):
     image : PIL.Image
         Loaded image
     """
-    return Image.open(path)
+    pil_image = Image.open(path)
+    im_numpy = np.array(pil_image)
+    im_numpy = im_numpy[:, :, :3]
+    img = Image.fromarray(im_numpy)
+    return img
 
 
 def write_image(filename, image):

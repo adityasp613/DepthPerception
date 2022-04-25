@@ -292,14 +292,14 @@ class ModelWrapper(torch.nn.Module):
         """Evaluate batch to produce depth metrics."""
         # Get predicted depth
         inv_depths = self.model(batch)['inv_depths']
-        depth = inv2depth(inv_depths[0])
+        depth = inv2depth(inv_depths)
         # Post-process predicted depth
         batch['rgb'] = flip_lr(batch['rgb'])
         if 'input_depth' in batch:
             batch['input_depth'] = flip_lr(batch['input_depth'])
         inv_depths_flipped = self.model(batch)['inv_depths']
         inv_depth_pp = post_process_inv_depth(
-            inv_depths[0], inv_depths_flipped[0], method='mean')
+            inv_depths, inv_depths_flipped, method='mean')
         depth_pp = inv2depth(inv_depth_pp)
         batch['rgb'] = flip_lr(batch['rgb'])
         # Calculate predicted metrics
@@ -511,7 +511,7 @@ def setup_dataset(config, mode, requirements, **kwargs):
 
         # Individual shared dataset arguments
         dataset_args_i = {
-            'depth_type': config.depth_type[i] if 'gt_depth' in requirements else None,
+            'depth_type': None,
             'input_depth_type': config.input_depth_type[i] if 'gt_depth' in requirements else None,
             'with_pose': 'gt_pose' in requirements,
         }
