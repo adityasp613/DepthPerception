@@ -89,51 +89,58 @@
 
 import cv2
 import torch
+from DepthModel import *
 import open3d as o3d 
 import numpy as numpy
 from kitti_utils import *
 import matplotlib.pyplot as plt
 
 
-IMAGE_FILE_PATH = '/home/ubuntu/18744/Data/KITTI_mini/object/testing/image_2/000008.png'
-CALIB_FILE_PATH = '/home/ubuntu/18744/Data/KITTI_mini/object/testing/calib/000008.txt'
+IMAGE_FILE_PATH = '/home/ubuntu/Downloads/000000.jpeg'
+CALIB_FILE_PATH = '/home/ubuntu/Downloads/kitti/testing/calib/000000.txt'
 
 raw_img = o3d.io.read_image(IMAGE_FILE_PATH) #cv2.imread(IMAGE_FILE_PATH)
 img = np.array(raw_img)
-calib_dict = LoadCalibrationFile(CALIB_FILE_PATH)
+# calib_dict = LoadCalibrationFile(CALIB_FILE_PATH)
 
-K = calib_dict['P2']
+# K = calib_dict['P2']
 
+#K = np.loadtxt(CALIB_FILE_PATH)
+K = np.array([320.00000000000006, 0.0, 320.0, 0.0, 0.0, 320.00000000000006, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+K = np.reshape(K, (3, 4))
 f_u = K[0, 0]
 f_v = K[1, 1]
 c_u =  K[0, 2]
 c_v =  K[1, 2]
 
-model_type = "DPT_Large"
-midas = torch.hub.load("intel-isl/MiDaS", model_type)
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-midas.to(device)
-midas.eval()
-midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
+# model_type = "DPT_Large"
+# midas = torch.hub.load("intel-isl/MiDaS", model_type)
+# device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+# midas.to(device)
+# midas.eval()
+# midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
 
-if model_type == "DPT_Large" or model_type == "DPT_Hybrid":
-    transform = midas_transforms.dpt_transform
-else:
-    transform = midas_transforms.small_transform
+# if model_type == "DPT_Large" or model_type == "DPT_Hybrid":
+#     transform = midas_transforms.dpt_transform
+# else:
+#     transform = midas_transforms.small_transform
 
-input_batch = transform(img).to(device)
-with torch.no_grad():
-    prediction = midas(input_batch)
-    print(prediction.size())
-    prediction = torch.nn.functional.interpolate(
-        prediction.unsqueeze(1),
-        size=img.shape[:2],
-        mode="bicubic",
-        align_corners=False,
-    ).squeeze()
+# input_batch = transform(img).to(device)
+# with torch.no_grad():
+#     prediction = midas(input_batch)
+#     print(prediction.size())
+#     prediction = torch.nn.functional.interpolate(
+#         prediction.unsqueeze(1),
+#         size=img.shape[:2],
+#         mode="bicubic",
+#         align_corners=False,
+#     ).squeeze()
 
+model = DepthModel('packnet')
+model.configure_model()
+prediction = model.generate_depth_map(img)
 cam_intrinsics = o3d.camera.PinholeCameraIntrinsic(img.shape[1], img.shape[0], f_u, f_v, c_u, c_v)
-depth = prediction.cpu().numpy()
+depth = prediction[0]
 depth_raw = o3d.cuda.pybind.geometry.Image(depth)
 rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(raw_img, depth_raw)
 
@@ -147,7 +154,7 @@ o3d.visualization.draw_geometries([pcd])
 
 plt.subplot(1, 2, 1)
 plt.title('Redwood grayscale image')
-plt.imshow(rgbd_image.color)
+plt.imshow(img)
 plt.subplot(1, 2, 2)
 plt.title('Redwood depth image')
 plt.imshow(rgbd_image.depth)

@@ -26,7 +26,7 @@ Built-in weather primitives and choices
 21: HardRainNight;
 
 '''
-SCENE_WEATHER = carla.WeatherParameters.ClearNoon
+SCENE_WEATHER = 'twilight'
 
 # Town for map load -> town0/7
 WORLD_MAP = 'town02'
@@ -51,3 +51,4 @@ ROOT_DIR = '/home/ubuntu/18744/DepthPerception/carla_image_datasets'
 DEPTH_MODEL = 'packnet'
 
 PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/DepthPerception/code_dev/PackNet01_MR_selfsup_D.ckpt'
+WEATHER = 'twilight' # CARLA weather condition

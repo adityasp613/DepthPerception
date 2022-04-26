@@ -95,50 +95,33 @@ from kitti_utils import *
 import matplotlib.pyplot as plt
 
 
-IMAGE_FILE_PATH = '/home/ubuntu/18744/Data/KITTI_mini/object/testing/image_2/000008.png'
-CALIB_FILE_PATH = '/home/ubuntu/18744/Data/KITTI_mini/object/testing/calib/000008.txt'
-
+IMAGE_FILE_PATH = '/home/ubuntu/Downloads/000008.jpeg'
+CALIB_FILE_PATH = '/home/ubuntu/18744/DepthPerception/carla_image_datasets/capture_2022_04_08-01_04_32_AM/cam_calib/calib.npy'
+PCL_PATH = '/home/ubuntu/Downloads/000008.bin'
 raw_img = o3d.io.read_image(IMAGE_FILE_PATH) #cv2.imread(IMAGE_FILE_PATH)
 img = np.array(raw_img)
-calib_dict = LoadCalibrationFile(CALIB_FILE_PATH)
+# calib_dict = LoadCalibrationFile(CALIB_FILE_PATH)
 
-K = calib_dict['P2']
+# K = calib_dict['P2']
 
+K = np.load(CALIB_FILE_PATH)
 f_u = K[0, 0]
 f_v = K[1, 1]
 c_u =  K[0, 2]
 c_v =  K[1, 2]
 
-model_type = "DPT_Large"
-midas = torch.hub.load("intel-isl/MiDaS", model_type)
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-midas.to(device)
-midas.eval()
-midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
 
-if model_type == "DPT_Large" or model_type == "DPT_Hybrid":
-    transform = midas_transforms.dpt_transform
-else:
-    transform = midas_transforms.small_transform
-
-input_batch = transform(img).to(device)
-with torch.no_grad():
-    prediction = midas(input_batch)
-    print(prediction.size())
-    prediction = torch.nn.functional.interpolate(
-        prediction.unsqueeze(1),
-        size=img.shape[:2],
-        mode="bicubic",
-        align_corners=False,
-    ).squeeze()
 
 cam_intrinsics = o3d.camera.PinholeCameraIntrinsic(img.shape[1], img.shape[0], f_u, f_v, c_u, c_v)
 depth = prediction.cpu().numpy()
 depth_raw = o3d.cuda.pybind.geometry.Image(depth)
 rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(raw_img, depth_raw)
 
-pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-    rgbd_image, cam_intrinsics)
+# pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
+#     rgbd_image, cam_intrinsics)
+
+pcd = o3d.geometry.PointCloud()
+pcd = 
 # Flip it, otherwise the pointcloud will be upside down
 pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 
