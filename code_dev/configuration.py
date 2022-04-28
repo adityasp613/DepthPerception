@@ -4,7 +4,7 @@ import carla
 SCENE_WEATHER = 'morning'
 
 # Town for map load -> town0/7
-WORLD_MAP = 'town07'
+WORLD_MAP = 'town04'
 
 # Path to the CARLA egg file
 CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-linux-x86_64.egg"
@@ -26,7 +26,90 @@ ROOT_DIR = '/home/ubuntu/18744/DepthPerception/carla_image_datasets'
 # Choice of depth model
 DEPTH_MODEL = 'packnet'
 
-PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/DepthPerception/code_dev/PackNet01_MR_selfsup_D.ckpt'
+PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/manucular_vision/PackNet01_MR_selfsup_D.ckpt'
 
 # Flag to display or not display image
 SHOW_IMAGE = True
+
+SEGMENTATION_NETWORK = 'detectron'
+pred_classes_mapping = ['background',
+ 'person',
+ 'bicycle',
+ 'car',
+ 'motorcycle',
+ 'airplane',
+ 'bus',
+ 'train',
+ 'truck',
+ 'boat',
+ 'traffic light',
+ 'fire hydrant',
+ 'stop sign',
+ 'parking meter',
+ 'bench',
+ 'bird',
+ 'cat',
+ 'dog',
+ 'horse',
+ 'sheep',
+ 'cow',
+ 'elephant',
+ 'bear',
+ 'zebra',
+ 'giraffe',
+ 'backpack',
+ 'umbrella',
+ 'handbag',
+ 'tie',
+ 'suitcase',
+ 'frisbee',
+ 'skis',
+ 'snowboard',
+ 'sports ball',
+ 'kite',
+ 'baseball bat',
+ 'baseball glove',
+ 'skateboard',
+ 'surfboard',
+ 'tennis racket',
+ 'bottle',
+ 'wine glass',
+ 'cup',
+ 'fork',
+ 'knife',
+ 'spoon',
+ 'bowl',
+ 'banana',
+ 'apple',
+ 'sandwich',
+ 'orange',
+ 'broccoli',
+ 'carrot',
+ 'hot dog',
+ 'pizza',
+ 'donut',
+ 'cake',
+ 'chair',
+ 'couch',
+ 'potted plant',
+ 'bed',
+ 'dining table',
+ 'toilet',
+ 'tv',
+ 'laptop',
+ 'mouse',
+ 'remote',
+ 'keyboard',
+ 'cell phone',
+ 'microwave',
+ 'oven',
+ 'toaster',
+ 'sink',
+ 'refrigerator',
+ 'book',
+ 'clock',
+ 'vase',
+ 'scissors',
+ 'teddy bear',
+ 'hair drier',
+ 'toothbrush']

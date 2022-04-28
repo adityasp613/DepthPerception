@@ -6,7 +6,9 @@ from matplotlib.cm import get_cmap
 import configuration as config
 import torch
 import time
+from Segmentation import Segmentation
 from cv2 import cv2
+import copy
 
 sys.path.append("/home/ubuntu/18744/DepthPerception/Code/packnet-sfm/")
 from packnet_sfm.models.model_wrapper import ModelWrapper
@@ -134,7 +136,14 @@ def generate_point_cloud(depth, camera_matrix):
     pseudo_cloud_rect = project_image_to_rect(points, camera_matrix)
     return pseudo_cloud_rect
 
-def process_image(image, folder, frame_id, depth_model, calibration, show_image = False):
+def draw_rectangle(img, boxes):
+    rmask_rcnn_image = copy.deepcopy(img)
+    for i in boxes:
+        cv2.rectangle(rmask_rcnn_image,(int(i[0]),int(i[1])),(int(i[2]),int(i[3])),(0,255,0),1)
+    
+    return rmask_rcnn_image
+
+def process_image(image, folder, frame_id, depth_model, seg_model, calibration, show_image = False):
     # print("Calibration matrix")
     # print(calibration)
     i = np.array(image.raw_data)
@@ -142,49 +151,50 @@ def process_image(image, folder, frame_id, depth_model, calibration, show_image 
     i3 = i2[:, :, :3]
     start_time = time.time()
     depth_map, depth_viz = depth_model.generate_depth_map(i3)
+    num_instances, classes, boxes, scores = seg_model.get_bounding_boxes(i3)
+    draw_img = draw_rectangle(i3, boxes)
 
     # Save the depth map
-    depth_map_file = 'depth_maps/depth_map_{}'.format(str(frame_id))
-    depth_path = os.path.join(folder, depth_map_file)
-    np.save(depth_path, depth_map)
+    # depth_map_file = 'depth_maps/depth_map_{}'.format(str(frame_id))
+    # depth_path = os.path.join(folder, depth_map_file)
+    # np.save(depth_path, depth_map)
 
     end_time = time.time()
-    computation_time_list.append(end_time - start_time)
-    average_inference_time = np.mean(computation_time_list)
-    print("Running average inference time = ", average_inference_time)
-    disp_map = (depth_map).astype(np.float32)/256
+    # computation_time_list.append(end_time - start_time)
+    # average_inference_time = np.mean(computation_time_list)
+    # print("Running average inference time = ", average_inference_time)
+    # disp_map = (depth_map).astype(np.float32)/256
 
     '''
     ToDo: Add frustum convnet code segment here
             - packnet image resizing needs to be looked into
     '''
-    point_cloud = generate_point_cloud(disp_map, calibration)
-    #print(point_cloud)
-    if(config.DEPTH_MODEL == 'packnet'):
-        depth_viz= ((depth_viz/255) * 255).astype('uint8')
-        depth_map_img = cv2.cvtColor(depth_viz, cv2.COLOR_RGB2BGR)
-        depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
-    elif(config.DEPTH_MODEL == 'midas'):
-        depth_map_img = np.dstack((depth_map, depth_map, depth_map))
-        depth_map_img = ((depth_map_img/255) * 255).astype('uint8')
-        depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_HSV)
-    else:
-        pass
+    # point_cloud = generate_point_cloud(disp_map, calibration)
+    # #print(point_cloud)
+    # if(config.DEPTH_MODEL == 'packnet'):
+    #     depth_viz= ((depth_viz/255) * 255).astype('uint8')
+    #     depth_map_img = cv2.cvtColor(depth_viz, cv2.COLOR_RGB2BGR)
+    #     depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
+    # elif(config.DEPTH_MODEL == 'midas'):
+    #     depth_map_img = np.dstack((depth_map, depth_map, depth_map))
+    #     depth_map_img = ((depth_map_img/255) * 255).astype('uint8')
+    #     depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_HSV)
+    # else:
+    #     pass
     if(show_image == True):
-        pass
-        # cv2.imshow("Original image", i3)
-        # cv2.imshow("Depth map", depth_map_img_gray)
-        # cv2.waitKey(5)
-    if(folder is not None):
-        depth_file = 'depth_map_{}.jpg'.format(str(frame_id))
-        lidar_file = 'point_clouds/pseudo_lidar_{}'.format(str(frame_id))
-        file_name = 'images/image_{}.jpg'.format(str(frame_id))
-        file = os.path.join(folder, file_name)
-        lidar_path = os.path.join(folder, lidar_file)
-        depth_path = os.path.join(folder, depth_file)
-        np.save(lidar_path, point_cloud)
-        cv2.imwrite(file, i3)
-        #cv2.imwrite(depth_path, depth_map_img_gray)
+        # pass
+        cv2.imshow("Original image", draw_img)
+        cv2.waitKey(5)
+    # if(folder is not None):
+    #     depth_file = 'depth_map_{}.jpg'.format(str(frame_id))
+    #     lidar_file = 'point_clouds/pseudo_lidar_{}'.format(str(frame_id))
+    #     file_name = 'images/image_{}.jpg'.format(str(frame_id))
+    #     file = os.path.join(folder, file_name)
+    #     lidar_path = os.path.join(folder, lidar_file)
+    #     depth_path = os.path.join(folder, depth_file)
+    #     np.save(lidar_path, point_cloud)
+    #     cv2.imwrite(file, i3)
+    #     #cv2.imwrite(depth_path, depth_map_img_gray)
     return depth_map
 
 def process_depth(image, folder, frame_id, depth_model, calibration, show_image, cmap):

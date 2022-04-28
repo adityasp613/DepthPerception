@@ -27,7 +27,7 @@ class SimWorld:
 		self.world.set_weather(weather)
 
 		# Create ego vehicle object
-		self.ego_vehicle = self.spawn_ego_vehicle()
+		#self.ego_vehicle = self.spawn_ego_vehicle()
 
 		# Notify server to update environment with ego vehicle
 		self.world.tick()
@@ -64,8 +64,9 @@ class SimWorld:
 		while(vehicle is None):									# Repeat until vehicle is spawned
 			spawn_point = random.choice(self.world.get_map().get_spawn_points())
 			vehicle = self.world.try_spawn_actor(bp, spawn_point)
-			vehicle.set_autopilot(True)
+		vehicle.set_autopilot(True)
 		print('Ego vehicle spawned......')
+		self.ego_vehicle = vehicle
 		return vehicle
 
 	'''
@@ -187,7 +188,7 @@ class SimWorld:
 	'''
 		brief: primary data acquisition function
 	'''
-	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, data_file_path, show_image):
+	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, segmentation_model, data_file_path, show_image):
 		current_frame = 0 
 
 		# Set up queue objects to enque images and depth maps
@@ -231,6 +232,6 @@ class SimWorld:
 					self.ego_vehicle.set_autopilot(True)
 
 					# process the camera image and depth image
-					a1 = data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image)
+					a1 = data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, segmentation_model, self.rgb_camera.calibration, show_image)
 					b1 = data_processing.process_depth(depth_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image, carla.ColorConverter.Raw)
 
