@@ -5,7 +5,7 @@ import torch
 import sys
 import cv2 as cv2
 
-sys.path.append("/home/ubuntu/18744/manucular_vision/DepthPerception/Code/packnet-sfm/")
+sys.path.append("/home/ubuntu/18744/manucular_vision/DepthPerception/code_dev/packnet-sfm/")
 from packnet_sfm.models.model_wrapper import ModelWrapper
 from packnet_sfm.datasets.augmentations import resize_image, to_tensor
 from packnet_sfm.utils.horovod import hvd_init, rank, world_size, print0

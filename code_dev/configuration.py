@@ -26,7 +26,7 @@ ROOT_DIR = '/home/ubuntu/18744/DepthPerception/carla_image_datasets'
 # Choice of depth model
 DEPTH_MODEL = 'packnet'
 
-PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/manucular_vision/PackNet01_MR_selfsup_D.ckpt'
+PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/manucular_vision/epoch_25.ckpt'
 
 # Flag to display or not display image
 SHOW_IMAGE = True

@@ -143,7 +143,24 @@ def draw_rectangle(img, boxes):
     
     return rmask_rcnn_image
 
-def process_image(image, folder, frame_id, depth_model, seg_model, calibration, show_image = False):
+def meshgrid_points(depth):
+    rows, cols = depth.shape
+    c, r = np.meshgrid(np.arange(cols), np.arange(rows))
+    points = np.stack([c, r, depth])
+    points = points.reshape((3, -1))
+    points = points.T
+    return points
+
+def process_depth_map(depth_map):
+    disp_map = (depth_map).astype(np.float32)/256.
+    pseudo_lidar_in_img_fov = meshgrid_points(disp_map)
+    pseudo_lidar_in_img_fov = np.concatenate([pseudo_lidar_in_img_fov, \
+                            np.ones((pseudo_lidar_in_img_fov.shape[0], 1))], 1)
+    pseudo_lidar_in_img_fov = pseudo_lidar_in_img_fov.astype(np.float32)
+    return pseudo_lidar_in_img_fov
+
+
+def process_image(image, folder, frame_id, depth_model, seg_model, frustum_convnet, calibration, show_image = False):
     # print("Calibration matrix")
     # print(calibration)
     i = np.array(image.raw_data)
@@ -153,6 +170,12 @@ def process_image(image, folder, frame_id, depth_model, seg_model, calibration, 
     depth_map, depth_viz = depth_model.generate_depth_map(i3)
     num_instances, classes, boxes, scores = seg_model.get_bounding_boxes(i3)
     draw_img = draw_rectangle(i3, boxes)
+    pseudo_lidar_in_img_fov = process_depth_map(depth_map)
+    frustum_convnet.prepare_data(num_instances, classes, boxes, scores, \
+        'saved_pickle_file', calibration, pseudo_lidar_in_img_fov)
+
+    # Preparing data for frustum convnet
+
 
     # Save the depth map
     # depth_map_file = 'depth_maps/depth_map_{}'.format(str(frame_id))

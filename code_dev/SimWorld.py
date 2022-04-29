@@ -188,7 +188,9 @@ class SimWorld:
 	'''
 		brief: primary data acquisition function
 	'''
-	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, segmentation_model, data_file_path, show_image):
+	def acquire_data(self, imwidth, imheight, imfov, frame_rate, num_frames, depth_model, \
+		segmentation_model, frustum_convnet, data_file_path, show_image):
+
 		current_frame = 0 
 
 		# Set up queue objects to enque images and depth maps
@@ -232,6 +234,6 @@ class SimWorld:
 					self.ego_vehicle.set_autopilot(True)
 
 					# process the camera image and depth image
-					a1 = data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, segmentation_model, self.rgb_camera.calibration, show_image)
+					a1 = data_processing.process_image(camera_queue.get(), data_file_path, current_frame, depth_model, segmentation_model, frustum_convnet, self.rgb_camera.calibration, show_image)
 					b1 = data_processing.process_depth(depth_queue.get(), data_file_path, current_frame, depth_model, self.rgb_camera.calibration, show_image, carla.ColorConverter.Raw)
 
