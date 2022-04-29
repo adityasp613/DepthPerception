@@ -173,6 +173,7 @@ def process_image(image, folder, frame_id, depth_model, seg_model, frustum_convn
     pseudo_lidar_in_img_fov = process_depth_map(depth_map)
     frustum_convnet.prepare_data(num_instances, classes, boxes, scores, \
         'saved_pickle_file', calibration, pseudo_lidar_in_img_fov)
+    frustum_convnet.test()
 
     # Preparing data for frustum convnet
 
