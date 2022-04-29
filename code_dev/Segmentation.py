@@ -65,7 +65,17 @@ class Segmentation():
 			classes = [config.pred_classes_mapping[i] for i in classes]
 			scores = preds[0]['scores']
 
-		return num_instances, classes, boxes, scores
+		boxes_car = []
+		classes_car = []
+		scores_car = []
+
+		for i in range(num_instances):
+			if classes[i] == 'Car' and scores[i] > config.SEGMENTATION_THRESH:
+				boxes_car.append(boxes[i])
+				classes_car.append(classes[i])
+				scores_car.append(scores[i])
+
+		return len(boxes_car), classes_car, boxes_car, scores_car
 
 
 

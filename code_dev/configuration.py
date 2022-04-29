@@ -4,7 +4,7 @@ import carla
 SCENE_WEATHER = 'morning'
 
 # Town for map load -> town0/7
-WORLD_MAP = 'town04'
+WORLD_MAP = 'town01'
 
 # Path to the CARLA egg file
 CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-linux-x86_64.egg"
@@ -12,7 +12,7 @@ CARLA_EGG_PATH = "/opt/carla-simulator/PythonAPI/carla/dist/carla-0.9.10-py3.6-l
 # Simulation configuration
 FPS = 40
 NUM_FRAMES = 1000
-IGNORE_NUM_FRAMES = 100
+IGNORE_NUM_FRAMES = 251
 NUM_VEHICLES = 100
 
 # Image dimensions
@@ -31,6 +31,7 @@ PACKNET_CHECKPOINT_FILE = '/home/ubuntu/18744/manucular_vision/epoch_25.ckpt'
 # Flag to display or not display image
 SHOW_IMAGE = True
 
+SEGMENTATION_THRESH = 0.7
 SEGMENTATION_NETWORK = 'detectron'
 pred_classes_mapping = ['background',
  'Pedestrian',

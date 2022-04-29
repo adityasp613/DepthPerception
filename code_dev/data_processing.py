@@ -9,8 +9,10 @@ import time
 from Segmentation import Segmentation
 from cv2 import cv2
 import copy
+import carla
 
-sys.path.append("/home/ubuntu/18744/DepthPerception/Code/packnet-sfm/")
+sys.path.append("/home/ubuntu/18744/manucular_vision/DepthPerception/code_dev/packnet-sfm/")
+
 from packnet_sfm.models.model_wrapper import ModelWrapper
 from packnet_sfm.datasets.augmentations import resize_image, to_tensor
 from packnet_sfm.utils.horovod import hvd_init, rank, world_size, print0
@@ -19,6 +21,9 @@ from packnet_sfm.utils.config import parse_test_file
 from packnet_sfm.utils.load import set_debug
 from packnet_sfm.utils.depth import write_depth, inv2depth, viz_inv_depth
 from packnet_sfm.utils.logging import pcolor
+
+sys.path.append("/home/ubuntu/18744/manucular_vision/DepthPerception/code_dev/frustum-convnet/")
+from visualize_3dbb import *
 
 computation_time_list = []
 
@@ -152,13 +157,23 @@ def meshgrid_points(depth):
     return points
 
 def process_depth_map(depth_map):
-    disp_map = (depth_map).astype(np.float32)/256.
+    disp_map = (depth_map).astype(np.float32)#/256.
     pseudo_lidar_in_img_fov = meshgrid_points(disp_map)
     pseudo_lidar_in_img_fov = np.concatenate([pseudo_lidar_in_img_fov, \
                             np.ones((pseudo_lidar_in_img_fov.shape[0], 1))], 1)
     pseudo_lidar_in_img_fov = pseudo_lidar_in_img_fov.astype(np.float32)
+    print("pseudo_lidar_in_img_fov", pseudo_lidar_in_img_fov.shape)
     return pseudo_lidar_in_img_fov
 
+def window_cv2(win_name, img):
+    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+
+    # Move it to (X,Y)
+    #cv2.moveWindow(win_name, X, Y)
+
+    cv2.imshow(win_name, img)
+
+    #cv2.resizeWindow(win_name, 400, 250)
 
 def process_image(image, folder, frame_id, depth_model, seg_model, frustum_convnet, calibration, show_image = False):
     # print("Calibration matrix")
@@ -167,13 +182,39 @@ def process_image(image, folder, frame_id, depth_model, seg_model, frustum_convn
     i2 = i.reshape((config.IMHEIGHT, config.IMWIDTH, 4))
     i3 = i2[:, :, :3]
     start_time = time.time()
+
+    depth_meters = process_depth(image, folder, frame_id, depth_model, calibration, show_image, carla.ColorConverter.Raw)
+
+    print("depth_meters _________________ ", depth_meters.shape)
+    print("depth_meters Min Max ", np.min(depth_meters), np.max(depth_meters))
+    # depth_meters = depth_meters / np.max(depth_meters)
+
+
     depth_map, depth_viz = depth_model.generate_depth_map(i3)
+
+    print("depth_map _________________ ", depth_map.shape)
+    print("depth_map Min Max ", np.min(depth_map), np.max(depth_map))
+
+    # ratio = np.max(depth_meters) / np.max(depth_map)
+    # depth_map = depth_map * ratio
+
+    print("depth_map Min Max ", np.min(depth_map), np.max(depth_map))
+
     num_instances, classes, boxes, scores = seg_model.get_bounding_boxes(i3)
     draw_img = draw_rectangle(i3, boxes)
+
+
     pseudo_lidar_in_img_fov = process_depth_map(depth_map)
     frustum_convnet.prepare_data(num_instances, classes, boxes, scores, \
         'saved_pickle_file', calibration, pseudo_lidar_in_img_fov)
-    frustum_convnet.test()
+    
+    convnet_bbox = frustum_convnet.test()
+    #image_aapli = cv2.imread("/home/ubuntu/18744/manucular_vision/DepthPerception/code_dev/frustum-convnet/data/kitti/testing/image_2/000000.png")
+    print("_______________________________________")
+    # print(type(image_aapli))
+    # print(type(i3))
+    print("_______________________________________")
+    img_3dbb = viz_3dbb(i3, convnet_bbox, boxes)
 
     # Preparing data for frustum convnet
 
@@ -195,20 +236,25 @@ def process_image(image, folder, frame_id, depth_model, seg_model, frustum_convn
     '''
     # point_cloud = generate_point_cloud(disp_map, calibration)
     # #print(point_cloud)
-    # if(config.DEPTH_MODEL == 'packnet'):
-    #     depth_viz= ((depth_viz/255) * 255).astype('uint8')
-    #     depth_map_img = cv2.cvtColor(depth_viz, cv2.COLOR_RGB2BGR)
-    #     depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
-    # elif(config.DEPTH_MODEL == 'midas'):
-    #     depth_map_img = np.dstack((depth_map, depth_map, depth_map))
-    #     depth_map_img = ((depth_map_img/255) * 255).astype('uint8')
-    #     depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_HSV)
-    # else:
-    #     pass
+    if(config.DEPTH_MODEL == 'packnet'):
+        depth_viz= ((depth_viz/255) * 255).astype('uint8')
+        depth_map_img = cv2.cvtColor(depth_viz, cv2.COLOR_RGB2BGR)
+        depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_MAGMA)
+    elif(config.DEPTH_MODEL == 'midas'):
+        depth_map_img = np.dstack((depth_map, depth_map, depth_map))
+        depth_map_img = ((depth_map_img/255) * 255).astype('uint8')
+        depth_map_img_gray = cv2.applyColorMap(depth_map_img, cv2.COLORMAP_HSV)
+    else:
+        pass
     if(show_image == True):
         # pass
-        cv2.imshow("Original image", draw_img)
+        # cv2.imshow("Original image", draw_img)
+
+        window_cv2("2D Bounding Box image", draw_img)
+        window_cv2("Depth Map", depth_map_img_gray)
+        window_cv2("3D Bounding Box image", img_3dbb)
         cv2.waitKey(5)
+
     # if(folder is not None):
     #     depth_file = 'depth_map_{}.jpg'.format(str(frame_id))
     #     lidar_file = 'point_clouds/pseudo_lidar_{}'.format(str(frame_id))
@@ -233,7 +279,7 @@ def process_depth(image, folder, frame_id, depth_model, calibration, show_image,
     depth_meters = normalized_depth * 1000
     depth_file = 'depth_ground_truth/depth_gt_{}'.format(str(frame_id))
     depth_path = os.path.join(folder, depth_file)
-    image.save_to_disk(depth_path,  cmap)
+    #image.save_to_disk(depth_path,  cmap)
     # np.save(depth_path, depth_meters)
     
     return depth_meters

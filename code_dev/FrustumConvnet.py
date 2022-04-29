@@ -145,6 +145,8 @@ class FrustumConvnet:
 		# calib = dataset.get_calibration(data_idx)  # 3 by 4 matrix
 		# pc_velo = dataset.get_lidar(data_idx) #* 256 # image frame --> pc_velo
 
+		print("calib_P2", calib_P2)
+
 		pc_velo[:, 2] = pc_velo[:, 2] * 256
 		pc_rect = np.zeros_like(pc_velo)
 
@@ -162,6 +164,7 @@ class FrustumConvnet:
 		    pc_velo[:, 0:3], calib_P2, 0, 0, img_width, img_height, True)
 		# cache = [calib, pc_rect, pc_image_coord, img_fov_inds]
 		# cache_id = data_idx
+		# pc_image_coord = pc_velo[:, 0:3]
 
 		for det_idx in range(det_id_list):
 		    # data_idx = det_id_list[det_idx]
@@ -189,6 +192,7 @@ class FrustumConvnet:
 		    uvdepth = np.zeros((1, 3))
 		    uvdepth[0, 0:2] = box2d_center
 		    uvdepth[0, 2] = 20  # some random depth
+		    print('calib_p2',calib_P2 )
 		    box2d_center_rect = self.project_image_to_rect(uvdepth, calib_P2)
 		    frustum_angle = -1 * np.arctan2(box2d_center_rect[0, 2],
 		                                    box2d_center_rect[0, 0])
@@ -249,6 +253,12 @@ class FrustumConvnet:
 	    os.system('rm -rf %s' % (result_dir))
 	    os.mkdir(result_dir)
 
+	    print("##### RESULTS #######")
+	    print(results)
+	    print("#####################")
+
+	    return results
+
 	    for idx in results:
 	        pred_filename = os.path.join(result_dir, '%06d.txt' % (idx))
 	        fout = open(pred_filename, 'w')
@@ -289,7 +299,7 @@ class FrustumConvnet:
 		            nms_results[idx] = {}
 		        nms_results[idx][class_type] = dets_keep
 
-		self.write_detection_results(output_dir, nms_results)
+		return self.write_detection_results(output_dir, nms_results)
 
 
 	def test(self):
@@ -501,19 +511,24 @@ class FrustumConvnet:
 
 		num_images = len(det_results)
 
-		logging.info('Average time:')
-		logging.info('batch:%0.3f' % fw_time_meter.avg)
-		logging.info('avg_per_object:%0.3f' % (fw_time_meter.avg / load_batch_size))
-		logging.info('avg_per_image:%.3f' % (fw_time_meter.avg * len(test_loader) / num_images))
+		# logging.info('Average time:')
+		# logging.info('batch:%0.3f' % fw_time_meter.avg)
+		# logging.info('avg_per_object:%0.3f' % (fw_time_meter.avg / load_batch_size))
+		# logging.info('avg_per_image:%.3f' % (fw_time_meter.avg * len(test_loader) / num_images))
 
 		# Write detection results for KITTI evaluation
 
 		print("det_results", det_results)
 		
-		# if cfg.TEST.METHOD == 'nms':
-		#     self.write_detection_results_nms(result_dir, det_results, threshold=cfg.TEST.THRESH)
-		# else:
-		#     self.write_detection_results(result_dir, det_results)
+
+		if cfg.TEST.METHOD == 'nms':
+		    det_results_final = self.write_detection_results_nms(result_dir, det_results, threshold=cfg.TEST.THRESH)
+		else:
+		    det_results_final = self.write_detection_results(result_dir, det_results)
+
+		print("####### FINAL RESULTS #########")
+		print(det_results_final)
+		return det_results_final
 
 		# output_dir = os.path.join(result_dir, 'data')
 
