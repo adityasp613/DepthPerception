@@ -33,9 +33,9 @@ SHOW_IMAGE = True
 
 SEGMENTATION_NETWORK = 'detectron'
 pred_classes_mapping = ['background',
- 'person',
- 'bicycle',
- 'car',
+ 'Pedestrian',
+ 'Cyclist',
+ 'Car',
  'motorcycle',
  'airplane',
  'bus',

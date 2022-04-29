@@ -218,6 +218,80 @@ class FrustumConvnet:
 		# print('total_objects %d' % len(id_list))
 		# print('save in {}'.format(output_filename))
 
+	def fill_files(self, output_dir, to_fill_filename_list):
+		''' Create empty files if not exist for the filelist. '''
+		for filename in to_fill_filename_list:
+		    filepath = os.path.join(output_dir, filename)
+		    if not os.path.exists(filepath):
+		        fout = open(filepath, 'w')
+		        fout.close()
+
+	def write_detection_results(self, output_dir, det_results):
+
+	    results = {}  # map from idx to list of strings, each string is a line (without \n)
+	    for idx in det_results:
+	        for class_type in det_results[idx]:
+	            dets = det_results[idx][class_type]
+	            for i in range(len(dets)):
+	                box2d = dets[i][:4]
+	                tx, ty, tz, h, w, l, ry = dets[i][4:-1]
+	                score = dets[i][-1]
+	                alpha = compute_alpha(tx, tz, ry)
+	                output_str = class_type + " -1 -1 "
+	                output_str += '%.4f ' % alpha
+	                output_str += "%.4f %.4f %.4f %.4f " % (box2d[0], box2d[1], box2d[2], box2d[3])
+	                output_str += "%.4f %.4f %.4f %.4f %.4f %.4f %.4f %f" % (h, w, l, tx, ty, tz, ry, score)
+	                if idx not in results:
+	                    results[idx] = []
+	                results[idx].append(output_str)
+
+	    result_dir = os.path.join(output_dir, 'data')
+	    os.system('rm -rf %s' % (result_dir))
+	    os.mkdir(result_dir)
+
+	    for idx in results:
+	        pred_filename = os.path.join(result_dir, '%06d.txt' % (idx))
+	        fout = open(pred_filename, 'w')
+	        for line in results[idx]:
+	            fout.write(line + '\n')
+	        fout.close()
+
+	    # Make sure for each frame (no matter if we have measurement for that frame),
+	    # there is a TXT file
+	    idx_path = 'kitti/image_sets/%s.txt' % cfg.TEST.DATASET
+
+	    to_fill_filename_list = [line.rstrip() + '.txt' for line in open(idx_path)]
+	    self.fill_files(result_dir, to_fill_filename_list)
+
+	def write_detection_results_nms(self, output_dir, det_results, threshold):
+
+		nms_results = {}
+		for idx in det_results:
+		    for class_type in det_results[idx]:
+		        dets = np.array(det_results[idx][class_type], dtype=np.float32)
+		        # scores = dets[:, -1]
+		        # keep = (scores > 0.001).nonzero()[0]
+		        # print(len(scores), len(keep))
+		        # dets = dets[keep]
+		        if len(dets) > 1:
+		            # (tx, ty, tz, h, w, l, ry, score) -> (tx, ty, tz, l, w, h, ry, score)
+		            dets_for_nms = dets[:, 4:][:, [0, 1, 2, 5, 4, 3, 6, 7]]
+		            # keep = cube_nms_np(dets_for_nms, threshold)
+		            keep = cube_nms(dets_for_nms, threshold)
+		            # (tx, ty, tz, h, w, l, ry, score) -> (tx, tz, l, w, ry, score)
+		            # dets_for_bev_nms = dets[:, 4:][:, [0, 2, 5, 4, 6, 7]]
+		            # keep = bev_nms_np(dets_for_bev_nms, threshold)
+		            # keep = bev_nms(dets_for_bev_nms, threshold)
+		            dets_keep = dets[keep]
+		        else:
+		            dets_keep = dets
+		        if idx not in nms_results:
+		            nms_results[idx] = {}
+		        nms_results[idx][class_type] = dets_keep
+
+		self.write_detection_results(output_dir, nms_results)
+
+
 	def test(self):
 
 		
@@ -225,7 +299,8 @@ class FrustumConvnet:
 
 		result_dir = 'frustum_result/'
 		cfg_file = './frustum-convnet/cfgs/det_sample.yaml'
-		opts = ['OUTPUT_DIR', 'pretrained_models/car', 'TEST.WEIGHTS', 'pretrained_models/car/model_0050.pth']
+		opts = ['OUTPUT_DIR', 'pretrained_models/car', 'TEST.WEIGHTS', \
+		'/home/ubuntu/18744/manucular_vision/DepthPerception/code_dev/frustum-convnet/pretrained_models/car/model_0050.pth']
 
 		if cfg_file is not None:
 		    merge_cfg_from_file(cfg_file)
@@ -267,13 +342,13 @@ class FrustumConvnet:
 		    from_rgb_detection=cfg.FROM_RGB_DET,
 		    overwritten_data_path=cfg.OVER_WRITE_TEST_FILE,
 			extend_from_det=False,
-			id_list = None, 
-			type_list = None, 
-			box2d_list = None, 
-			prob_list = None, 
-			input_list = None, 
-			frustum_angle_list = None, 
-			calib_list = None)
+			id_list = self.id_list, 
+			type_list = self.type_list, 
+			box2d_list = self.box2d_list, 
+			prob_list = self.prob_list, 
+			input_list = self.input_list, 
+			frustum_angle_list = self.frustum_angle_list, 
+			calib_list = self.calib_list)
 
 		test_loader = torch.utils.data.DataLoader(
 		    test_dataset,
@@ -297,6 +372,7 @@ class FrustumConvnet:
 
 		model = model.cuda()
 
+		print("!!!!!!!!!!", cfg.TEST.WEIGHTS)
 		if os.path.isfile(cfg.TEST.WEIGHTS):
 		    checkpoint = torch.load(cfg.TEST.WEIGHTS)
 		    # start_epoch = checkpoint['epoch']
@@ -432,20 +508,22 @@ class FrustumConvnet:
 
 		# Write detection results for KITTI evaluation
 
-		if cfg.TEST.METHOD == 'nms':
-		    write_detection_results_nms(result_dir, det_results, threshold=cfg.TEST.THRESH)
-		else:
-		    write_detection_results(result_dir, det_results)
+		print("det_results", det_results)
+		
+		# if cfg.TEST.METHOD == 'nms':
+		#     self.write_detection_results_nms(result_dir, det_results, threshold=cfg.TEST.THRESH)
+		# else:
+		#     self.write_detection_results(result_dir, det_results)
 
-		output_dir = os.path.join(result_dir, 'data')
+		# output_dir = os.path.join(result_dir, 'data')
 
-		if 'test' not in cfg.TEST.DATASET:
-		    if os.path.exists('../kitti-object-eval-python'):
-		        evaluate_cuda_wrapper(output_dir, cfg.TEST.DATASET)
-		    else:
-		        evaluate_py_wrapper(result_dir)
+		# if 'test' not in cfg.TEST.DATASET:
+		#     if os.path.exists('../kitti-object-eval-python'):
+		#         evaluate_cuda_wrapper(output_dir, cfg.TEST.DATASET)
+		#     else:
+		#         evaluate_py_wrapper(result_dir)
 		       
-		else:
-		    logger.info('results file save in  {}'.format(result_dir))
-		    os.system('cd %s && zip -q -r ../results.zip *' % (result_dir))
+		# else:
+		#     logger.info('results file save in  {}'.format(result_dir))
+		#     os.system('cd %s && zip -q -r ../results.zip *' % (result_dir))
 
